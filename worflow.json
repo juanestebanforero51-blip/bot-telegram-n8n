@@ -1,0 +1,1561 @@
+{
+  "name": "Data Lab - Grupo A",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "47bc43d6-6006-4e04-8c50-060b4cd8d4e5",
+      "name": "Telegram Trigger",
+      "webhookId": "9ca58719-cdaf-4f19-be1b-3c948dae584f",
+      "credentials": {
+        "telegramApi": {
+          "id": "dQ3F9GXW7Kp6b4tC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst message = item.json.message || {};\nconst tieneTexto = Boolean(message.text);\nconst tieneFoto = Array.isArray(message.photo) && message.photo.length > 0;\nconst tieneSticker = Boolean(message.sticker);\nlet tipoMensaje = \"desconocido\";\nif (tieneSticker) {\n tipoMensaje = \"sticker\";\n} else if (tieneFoto) {\n tipoMensaje = \"foto_meme\";\n} else if (tieneTexto) {\n const texto = message.text.trim();\n if (texto.startsWith(\"/\")) {\n tipoMensaje = \"comando\";\n } else {\n tipoMensaje = \"texto\";\n }\n}\nreturn [\n {\n json: {\n ...item.json,\n tipo_mensaje: tipoMensaje,\n chat_id: message.chat?.id || \"\",\n texto_usuario: message.text || \"\",\n tiene_sticker: tieneSticker,\n tiene_foto: tieneFoto,\n tiene_texto: tieneTexto\n }\n }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e54484a5-1306-4065-a297-24f5908fa3d1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tiene_sticker }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "7709d13a-1289-4cbe-aa67-9f618fd83915"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sticker"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "19b854d6-4290-4486-9563-5c9be719904c",
+                    "leftValue": "={{ $json.tiene_foto }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "foto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "be4c6dd6-1e90-4fc0-99d3-8fdfc4d34740",
+                    "leftValue": "={{ $json.tiene_texto }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "texto"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a65e0cba-abc3-40e5-a8ca-cedd6bbcf87c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst message = item.json.message || {};\nconst sticker = message.sticker || {};\nconst fileId = sticker.file_id || \"\";\nreturn [\n {\n json: {\n ...item.json,\n file_id: fileId,\n tipo_entrada: \"sticker\",\n fuente: \"Telegram\"\n }\n }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -112
+      ],
+      "id": "75b91520-a19f-4b2f-8d8c-4eddbf30c263",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst message = item.json.message || {};\nconst fotos = message.photo || [];\n// Reto: seleccionar la última foto del arreglo.\n// Telegram suele entregar varias resoluciones; normalmente la última es la de mayor tamaño.\nconst mejorFoto = fotos[fotos.lenght - 1];\nconst fileId = mejorFoto?.file_id || \"\";\nreturn [\n {\n json: {\n ...item.json,\n file_id: fileId,\n tipo_entrada: \"foto_meme\",\n fuente: \"Telegram\"\n   }\n }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        80
+      ],
+      "id": "09f58d0f-b7f2-4045-a1b3-45b6e2b75868",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.sticker.thumbnail.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        -112
+      ],
+      "id": "4747cc6b-3dc2-4251-851d-455886ffdb81",
+      "name": "Get a file",
+      "webhookId": "67fd59d7-e9b5-4229-806b-c3f1069ce9bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "dQ3F9GXW7Kp6b4tC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        80
+      ],
+      "id": "2ca9c13d-d13b-428a-a806-0421a1f61358",
+      "name": "Get a file1",
+      "webhookId": "bbe0ae09-c77f-4f12-a2d1-3c447133b13b",
+      "credentials": {
+        "telegramApi": {
+          "id": "dQ3F9GXW7Kp6b4tC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Actúa como un Analista de Imágenes experto en ingeniería de datos para un proyecto académico de ETL sobre memes y stickers. Tu tarea es analizar la imagen recibida, priorizando exclusivamente el contenido del sticker o meme central e ignorando cualquier texto de sistema o interfaz de chat. Para el campo categoria_tematica, debes clasificar obligatoriamente usando una de estas opciones y sus definiciones: vida_universitaria (clases, tareas, parciales, profesores), tecnologia_ia (IA, programación, apps, redes), relaciones_sociales (amistad, familia, pareja, interacción), cultura_digital (internet, memes, tendencias, chats), trabajo_productividad (cansancio, organización, estrés), humor_absurdo (lógica surrealista, exageración), o, solo en última instancia, otro. Para categoria_emocional, elige obligatoriamente: alegria, estres, frustracion, sarcasmo, sorpresa, tristeza, o neutral. Antes de asignar \"otro\" o \"neutral\", realiza un proceso de descarte lógico comparando la imagen con las definiciones proporcionadas. El resultado debe ser un único objeto JSON (sin Markdown, sin explicaciones, sin saludos) con las llaves: \"descripcion_visual\", \"texto_detectado\", \"categoria_tematica\", \"categoria_emocional\", \"tono\", \"rasgo_predominante\", \"instrucciones_dibujo\", \"contiene_persona_real\", \"requiere_consentimiento\" y \"estado\". Las \"instrucciones_dibujo\" deben ser pasos técnicos para una persona física. Si la imagen contiene a una persona, no la identifiques, mantén la descripción general y marca los campos de persona y consentimiento como \"Sí\" o \"No\". Si no puedes procesar la imagen, el estado será \"ERROR\", de lo contrario \"OK\".",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        -112
+      ],
+      "id": "b2a7446a-3448-4963-b4c9-0f4b6d4462df",
+      "name": "Analyze an image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zSVQONaA7CURnwsM",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n// 1. Extraer texto devuelto por Gemini\nlet raw = \"\";\nif (\n input.candidates &&\n Array.isArray(input.candidates) &&\n input.candidates[0]?.content?.parts?.[0]?.text\n) {\n raw = input.candidates[0].content.parts[0].text;\n} else if (input.content?.parts?.[0]?.text) {\n raw = input.content.parts[0].text;\n} else {\n raw = input.text || input.output || input.response || input.result || \"\";\n}\nif (typeof raw !== \"string\") {\n raw = JSON.stringify(raw);\n\n}\n// 2. Limpiar markdown si Gemini lo agregó\nraw = raw\n .replace(/```json/g, \"\")\n .replace(/```JSON/g, \"\")\n .replace(/```/g, \"\")\n .trim();\n// 3. Intentar convertir a JSON\nconst match = raw.match(/\\{[\\s\\S]*\\}/);\nlet data;\ntry {\n data = match ? JSON.parse(match[0]) : JSON.parse(raw);\n} catch (error) {\n data = {\n descripcion_visual: \"\",\n texto_detectado: \"\",\n categoria_tematica: \"otro\",\n categoria_emocional: \"neutral\",\n tono: \"\",\n rasgo_predominante: \"\",\n instrucciones_dibujo: \"\",\n contiene_persona_real: \"No\",\n requiere_consentimiento: \"No\",\n estado: \"ERROR\",\n detalle_error: \"No se pudo convertir la respuesta de Gemini a JSON\"\n };\n}\n// 4. Categorías válidas\nconst categoriasTematicas = [\n \"vida_universitaria\",\n \"tecnologia_ia\",\n \"relaciones_sociales\",\n \"cultura_digital\",\n \"trabajo_productividad\",\n \"humor_absurdo\",\n \"otro\"\n];\nconst categoriasEmocionales = [\n \"alegria\",\n \"estres\",\n \"frustracion\",\n \"sarcasmo\",\n \"sorpresa\",\n \"tristeza\",\n \"neutral\"\n];\n// 5. Normalizar categorías\nif (!categoriasTematicas.includes(data.categoria_tematica)) {\n data.categoria_tematica = \"otro\";\n}\nif (!categoriasEmocionales.includes(data.categoria_emocional)) {\n data.categoria_emocional = \"neutral\";\n}\n// 6. Recuperar datos del flujo anterior\nlet entrada = {};\ntry {\n entrada = $(\"Identificar tipo de mensaje\").first().json;\n} catch (error) {\n entrada = {};\n}\n\nlet tipoEntrada = \"\";\nlet fuente = \"\";\ntry {\n tipoEntrada = $json.tipo_entrada || entrada.tipo_mensaje || \"\";\n fuente = $json.fuente || \"Telegram\";\n} catch (error) {\n tipoEntrada = \"\";\n fuente = \"Telegram\";\n}\n// 7. Preparar fila final\nconst ahora = new Date().toISOString();\nreturn [\n {\n json: {\n id_registro: `reg_${Date.now()}`,\n fecha_registro: ahora,\n integrante_responsable: \"\",\n fuente: fuente,\n tipo_entrada: tipoEntrada,\n descripcion_visual: data.descripcion_visual || \"\",\n texto_detectado: data.texto_detectado || \"\",\n categoria_tematica: data.categoria_tematica || \"otro\",\n categoria_emocional: data.categoria_emocional || \"neutral\",\n tono: data.tono || \"\",\n rasgo_predominante: data.rasgo_predominante || \"\",\n instrucciones_dibujo: data.instrucciones_dibujo || \"\",\n contiene_persona_real: data.contiene_persona_real || \"No\",\n requiere_consentimiento: data.requiere_consentimiento || \"No\",\n estado: data.estado || \"OK\",\n detalle_error: data.detalle_error || \"\",\n chat_id: entrada.chat_id || \"\"\n }\n }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -112
+      ],
+      "id": "4a8c9310-9c12-4b48-8caf-0f2009bc9757",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n// 1. Extraer texto devuelto por Gemini\nlet raw = \"\";\nif (\n input.candidates &&\n Array.isArray(input.candidates) &&\n input.candidates[0]?.content?.parts?.[0]?.text\n) {\n raw = input.candidates[0].content.parts[0].text;\n} else if (input.content?.parts?.[0]?.text) {\n raw = input.content.parts[0].text;\n} else {\n raw = input.text || input.output || input.response || input.result || \"\";\n}\nif (typeof raw !== \"string\") {\n raw = JSON.stringify(raw);\n\n}\n// 2. Limpiar markdown si Gemini lo agregó\nraw = raw\n .replace(/```json/g, \"\")\n .replace(/```JSON/g, \"\")\n .replace(/```/g, \"\")\n .trim();\n// 3. Intentar convertir a JSON\nconst match = raw.match(/\\{[\\s\\S]*\\}/);\nlet data;\ntry {\n data = match ? JSON.parse(match[0]) : JSON.parse(raw);\n} catch (error) {\n data = {\n descripcion_visual: \"\",\n texto_detectado: \"\",\n categoria_tematica: \"otro\",\n categoria_emocional: \"neutral\",\n tono: \"\",\n rasgo_predominante: \"\",\n instrucciones_dibujo: \"\",\n contiene_persona_real: \"No\",\n requiere_consentimiento: \"No\",\n estado: \"ERROR\",\n detalle_error: \"No se pudo convertir la respuesta de Gemini a JSON\"\n };\n}\n// 4. Categorías válidas\nconst categoriasTematicas = [\n \"vida_universitaria\",\n \"tecnologia_ia\",\n \"relaciones_sociales\",\n \"cultura_digital\",\n \"trabajo_productividad\",\n \"humor_absurdo\",\n \"otro\"\n];\nconst categoriasEmocionales = [\n \"alegria\",\n \"estres\",\n \"frustracion\",\n \"sarcasmo\",\n \"sorpresa\",\n \"tristeza\",\n \"neutral\"\n];\n// 5. Normalizar categorías\nif (!categoriasTematicas.includes(data.categoria_tematica)) {\n data.categoria_tematica = \"otro\";\n}\nif (!categoriasEmocionales.includes(data.categoria_emocional)) {\n data.categoria_emocional = \"neutral\";\n}\n// 6. Recuperar datos del flujo anterior\nlet entrada = {};\ntry {\n entrada = $(\"Identificar tipo de mensaje\").first().json;\n} catch (error) {\n entrada = {};\n}\n\nlet tipoEntrada = \"\";\nlet fuente = \"\";\ntry {\n tipoEntrada = $json.tipo_entrada || entrada.tipo_mensaje || \"\";\n fuente = $json.fuente || \"Telegram\";\n} catch (error) {\n tipoEntrada = \"\";\n fuente = \"Telegram\";\n}\n// 7. Preparar fila final\nconst ahora = new Date().toISOString();\nreturn [\n {\n json: {\n id_registro: `reg_${Date.now()}`,\n fecha_registro: ahora,\n integrante_responsable: \"\",\n fuente: fuente,\n tipo_entrada: tipoEntrada,\n descripcion_visual: data.descripcion_visual || \"\",\n texto_detectado: data.texto_detectado || \"\",\n categoria_tematica: data.categoria_tematica || \"otro\",\n categoria_emocional: data.categoria_emocional || \"neutral\",\n tono: data.tono || \"\",\n rasgo_predominante: data.rasgo_predominante || \"\",\n instrucciones_dibujo: data.instrucciones_dibujo || \"\",\n contiene_persona_real: data.contiene_persona_real || \"No\",\n requiere_consentimiento: data.requiere_consentimiento || \"No\",\n estado: data.estado || \"OK\",\n detalle_error: data.detalle_error || \"\",\n chat_id: entrada.chat_id || \"\"\n }\n }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        80
+      ],
+      "id": "15e92ad9-ebe3-4ac3-812d-2f6e4b506c3d",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM",
+          "mode": "list",
+          "cachedResultName": "Sticker Data Lab - Grupo A",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "stickers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_registro": "={{ $json.id_registro }}",
+            "fecha_registro": "={{ $json.fecha_registro }}",
+            "integrante_responsable": "={{ $json.integrante_responsable }}",
+            "fuente": "={{ $json.fuente }}",
+            "tipo_entrada": "={{ $json.tipo_entrada }}",
+            "descripcion_visual": "={{ $json.descripcion_visual }}",
+            "texto_detectado": "={{ $json.texto_detectado }}",
+            "categoria_tematica": "={{ $json.categoria_tematica }}",
+            "categoria_emocional": "={{ $json.categoria_emocional }}",
+            "tono": "={{ $json.tono }}",
+            "rasgo_predominante": "={{ $json.rasgo_predominante }}",
+            "instrucciones_dibujo": "={{ $json.instrucciones_dibujo }}",
+            "contiene_persona_real": "={{ $json.contiene_persona_real }}",
+            "requiere_consentimiento": "={{ $json.requiere_consentimiento }}",
+            "estado": "={{ $json.estado }}",
+            "detalle_error": "={{ $json.detalle_error }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_registro",
+              "displayName": "id_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "integrante_responsable",
+              "displayName": "integrante_responsable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fuente",
+              "displayName": "fuente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tipo_entrada",
+              "displayName": "tipo_entrada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion_visual",
+              "displayName": "descripcion_visual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "texto_detectado",
+              "displayName": "texto_detectado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria_tematica",
+              "displayName": "categoria_tematica",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria_emocional",
+              "displayName": "categoria_emocional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tono",
+              "displayName": "tono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rasgo_predominante",
+              "displayName": "rasgo_predominante",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "instrucciones_dibujo",
+              "displayName": "instrucciones_dibujo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contiene_persona_real",
+              "displayName": "contiene_persona_real",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requiere_consentimiento",
+              "displayName": "requiere_consentimiento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_error",
+              "displayName": "detalle_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        80
+      ],
+      "id": "5bfb12cc-633b-495b-934b-f21cbdd8f7b7",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "S2RzcUwpK3gwSeRU",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM",
+          "mode": "list",
+          "cachedResultName": "Sticker Data Lab - Grupo A",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "stickers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_registro": "={{ $json.id_registro }}",
+            "fecha_registro": "={{ $json.fecha_registro }}",
+            "integrante_responsable": "={{ $json.integrante_responsable }}",
+            "fuente": "={{ $json.fuente }}",
+            "tipo_entrada": "={{ $json.tipo_entrada }}",
+            "descripcion_visual": "={{ $json.descripcion_visual }}",
+            "texto_detectado": "={{ $json.texto_detectado }}",
+            "categoria_tematica": "={{ $json.categoria_tematica }}",
+            "categoria_emocional": "={{ $json.categoria_emocional }}",
+            "tono": "={{ $json.tono }}",
+            "rasgo_predominante": "={{ $json.rasgo_predominante }}",
+            "instrucciones_dibujo": "={{ $json.instrucciones_dibujo }}",
+            "contiene_persona_real": "={{ $json.contiene_persona_real }}",
+            "requiere_consentimiento": "={{ $json.requiere_consentimiento }}",
+            "estado": "={{ $json.estado }}",
+            "detalle_error": "={{ $json.detalle_error }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_registro",
+              "displayName": "id_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "integrante_responsable",
+              "displayName": "integrante_responsable",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fuente",
+              "displayName": "fuente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tipo_entrada",
+              "displayName": "tipo_entrada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion_visual",
+              "displayName": "descripcion_visual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "texto_detectado",
+              "displayName": "texto_detectado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria_tematica",
+              "displayName": "categoria_tematica",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria_emocional",
+              "displayName": "categoria_emocional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tono",
+              "displayName": "tono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rasgo_predominante",
+              "displayName": "rasgo_predominante",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "instrucciones_dibujo",
+              "displayName": "instrucciones_dibujo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contiene_persona_real",
+              "displayName": "contiene_persona_real",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requiere_consentimiento",
+              "displayName": "requiere_consentimiento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_error",
+              "displayName": "detalle_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        -112
+      ],
+      "id": "b6f66cf7-a1e1-457e-b50f-d456fb41928f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "S2RzcUwpK3gwSeRU",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Sticker/meme registrado correctamente. \n\nCategoría temática: {{ $json.categoria_tematica }} \nEmoción dominante: {{ $json.categoria_emocional }} \nTono: {{ $json.tono }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        128
+      ],
+      "id": "8ebcfe15-93e1-42b2-ae4d-aba1c0bcd1fb",
+      "name": "Send a text message1",
+      "webhookId": "5297c3ec-5d05-4578-ad56-815f6321aafb",
+      "credentials": {
+        "telegramApi": {
+          "id": "dQ3F9GXW7Kp6b4tC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=No se pudo registrar correctamente el sticker o meme.\nDetalle: {{ $json.detalle_error }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        -48
+      ],
+      "id": "0a0f88d0-6de3-46e7-b433-44619c619a45",
+      "name": "Send a text message2",
+      "webhookId": "5297c3ec-5d05-4578-ad56-815f6321aafb",
+      "credentials": {
+        "telegramApi": {
+          "id": "dQ3F9GXW7Kp6b4tC",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "828c6613-1f86-46a6-a9ca-190e15ea47b4"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2e7e62fe-d724-4544-8a7a-6e757110e25e",
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1632,
+        0
+      ],
+      "id": "14176931-92cf-44b4-b4d8-4b505a4cd58e",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Code in JavaScript').item.json.texto_usuario }}",
+                    "rightValue": "/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    },
+                    "id": "1ee13e30-5605-45c5-9c7f-9cd070209212"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e8ca3064-6345-47e8-b034-6879c3a3a347",
+                    "leftValue": "={{ $('Code in JavaScript').item.json.texto_usuario }}",
+                    "rightValue": "/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notStartsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        304
+      ],
+      "id": "00ca5c68-4ef6-4519-a62b-b29e0dc4f6e4",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst texto = item.json.texto_usuario || \"\";\nlet comando = \"desconocido\";\nif (texto.startsWith(\"/ayuda\")) {\n comando = \"ayuda\";\n} else if (texto.startsWith(\"/resumen\")) {\n comando = \"resumen\";\n}\nreturn [\n {\n json: {\n ...item.json,\n comando\n }\n }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        304
+      ],
+      "id": "3c4a2628-3492-4d9c-b2cb-2d7c4776f735",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.texto_usuario }}",
+                    "rightValue": "/ayuda",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a8231265-ef0d-4f12-96ef-c49f23f7198c"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "da22fb28-8eee-46e0-bc6d-0d39588e6285",
+                    "leftValue": "={{ $json.texto_usuario }}",
+                    "rightValue": "/top",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8d40572f-b61e-4c99-97ae-4a5dbad9b7fe",
+                    "leftValue": "={{ $json.texto_usuario }}",
+                    "rightValue": "/resumen",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ecbb2190-8ae2-4e47-8859-c02aaa0d387a",
+                    "leftValue": "={{ $json.texto_usuario }}",
+                    "rightValue": "/ayuda",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "748fe343-c4c4-4128-ad5f-d2606ba3a9cb",
+                    "leftValue": "={{ $json.texto_usuario }}",
+                    "rightValue": "/resumen",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e2579591-bceb-4463-aa17-a0b9f15cfa55",
+                    "leftValue": "",
+                    "rightValue": "/top",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        304
+      ],
+      "id": "50758a9a-dc8f-4b4e-9dae-ff2c20929c67",
+      "name": "Switch3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Iteramos sobre todos los ítems que llegan al nodo\nfor (const item of items) {\n  // Ajusta 'texto' por el nombre del campo que contiene tu mensaje\n  const textoOriginal = item.json.texto; \n\n  if (typeof textoOriginal === 'string') {\n    // 1. .trim() elimina los espacios en blanco al inicio y al final\n    // 2. .toLowerCase() convierte todo a minúsculas\n    item.json.texto = textoOriginal.trim().toLowerCase();\n  }\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        304
+      ],
+      "id": "2c3dd1a1-471a-4a7d-9d64-97ec9d81efa6",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hola. Soy el bot de Sticker Data Lab. \n\nPuedes usarme así: \n1. Envíame un sticker de Telegram\n2. Envíame una imagen tipo meme como foto \n3. Usa /resumen para consultar el estado del dataset \n4 Usa /top para mostrar la categoría más frecuente\n\nEl sistema analizará la imagen, clasificará el tema y la emoción, y guardará los metadatos en Google Sheets.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        224
+      ],
+      "id": "4bf2b7b5-7f20-414f-9f25-b5b154f041d7",
+      "name": "Send a text message",
+      "webhookId": "1637eef3-e40b-4dfb-9e25-7756682dac06",
+      "credentials": {
+        "telegramApi": {
+          "id": "fNTBkq2KsHhsxyjQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=No pude identificar el tipo de mensaje. \n\nPuedes enviarme: \n- un sticker de Telegram compatible\n- una imagen tipo meme \n- /ayuda \n- /resumen",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        464
+      ],
+      "id": "931263e3-f7a4-4dde-b690-e606b66f0ada",
+      "name": "Send a text message3",
+      "webhookId": "8d5dde99-c9dc-4523-b554-43bb9adde6e5",
+      "credentials": {
+        "telegramApi": {
+          "id": "fNTBkq2KsHhsxyjQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtenemos las filas\nconst rows = $input.all().map(item => item.json);\n\n// 2. Filtramos solo los que tienen estado \"OK\"\nconst registrosOK = rows.filter(row => row.estado === \"OK\");\n\n// 3. Contamos cuántos hay\nconst totalProcesados = registrosOK.length;\n\n// 4. Capturamos el chat_id\nlet chatId = \"\";\ntry {\n  chatId = $(\"Identificar tipo de mensaje\").first().json.chat_id;\n} catch (error) {\n  chatId = \"\";\n}\n\n// 5. Construimos el mensaje solo con el total\nconst mensaje = `📊 Resumen del dataset:\nTotal procesados correctamente: ${totalProcesados}`;\n\nreturn [\n  {\n    json: {\n      chat_id: chatId,\n      mensaje_resumen: mensaje\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        528
+      ],
+      "id": "69a1dbc7-9458-4b4f-9927-5d47601bb29b",
+      "name": "Code in JavaScript7"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.mensaje_resumen }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        544
+      ],
+      "id": "042cca75-be85-4d58-95cc-7312961ed3a5",
+      "name": "Send a text message4",
+      "webhookId": "88614877-3a75-4659-ade6-ce94fa6345cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "fNTBkq2KsHhsxyjQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM",
+          "mode": "list",
+          "cachedResultName": "Sticker Data Lab - Grupo A",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "stickers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1504,
+        528
+      ],
+      "id": "5cf47010-2cb3-4abc-8197-833192dffdfa",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "S2RzcUwpK3gwSeRU",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=No pude identificar el tipo de mensaje. \n\nPuedes enviarme: \n- un sticker de Telegram compatible \n- una imagen tipo meme \n- /ayuda \n- /resumen\n- /top.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        784
+      ],
+      "id": "331649a1-1d8a-483d-99b3-6f78a6be3a07",
+      "name": "Send a text message5",
+      "webhookId": "8d5dde99-c9dc-4523-b554-43bb9adde6e5",
+      "credentials": {
+        "telegramApi": {
+          "id": "fNTBkq2KsHhsxyjQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM",
+          "mode": "list",
+          "cachedResultName": "Sticker Data Lab - Grupo A",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "stickers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OkljUJ7IcmzcQcv18klDv8gf2i9afmVrt1giQ7VjyLM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1488,
+        400
+      ],
+      "id": "2a1a9a0f-0b3c-40a0-afa9-072c3e39e393",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "S2RzcUwpK3gwSeRU",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Leemos todas las filas (asegúrate de que el nodo lea la hoja \"stickers\")\nconst rows = $input.all().map(item => item.json);\n\n// Filtramos solo los que tienen estado OK\nconst registrosOK = rows.filter(row => row.estado === \"OK\");\n\nfunction obtenerMasFrecuente(campo) {\n  const conteo = {};\n  let mayor = \"sin_dato\";\n  let cantidad = 0;\n\n  for (const row of registrosOK) {\n    const valor = row[campo] || \"sin_dato\";\n    conteo[valor] = (conteo[valor] || 0) + 1;\n    \n    // Identificamos el mayor al vuelo\n    if (conteo[valor] > cantidad) {\n      cantidad = conteo[valor];\n      mayor = valor;\n    }\n  }\n  return { valor: mayor, cantidad };\n}\n\n// Ejecutamos el conteo\nconst temaTop = obtenerMasFrecuente(\"categoria_tematica\");\nconst emocionTop = obtenerMasFrecuente(\"categoria_emocional\");\n\n// Capturamos el chat_id desde el nodo Interruptor3\nlet chatId = \"\";\ntry {\n  chatId = $(\"Interruptor3\").first().json.mensaje.chat.id;\n} catch (error) {\n  chatId = \"\";\n}\n\n// Construimos el mensaje final\nconst mensaje = `🏆 TOP del Dataset:\n\n📌 Categoría más frecuente: ${temaTop.valor}\n(Aparece ${temaTop.cantidad} veces)\n\n✨ Emoción dominante: ${emocionTop.valor}\n(Aparece ${emocionTop.cantidad} veces)`;\n\nreturn [\n  {\n    json: {\n      chat_id: chatId,\n      mensaje_top: mensaje\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        400
+      ],
+      "id": "df527717-7285-44d5-8b95-d1933fdbfc30",
+      "name": "Code in JavaScript8"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.mensaje_top }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1904,
+        384
+      ],
+      "id": "12c95ca3-d64b-438e-8771-604701f95f6e",
+      "name": "Send a text message6",
+      "webhookId": "51e7dd1b-cda6-46ff-a720-b5053a7606ce",
+      "credentials": {
+        "telegramApi": {
+          "id": "fNTBkq2KsHhsxyjQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Actúa como un Analista de Imágenes experto en ingeniería de datos para un proyecto académico de ETL sobre memes y stickers. Tu tarea es analizar la imagen recibida, priorizando exclusivamente el contenido del sticker o meme central e ignorando cualquier texto de sistema o interfaz de chat. Para el campo categoria_tematica, debes clasificar obligatoriamente usando una de estas opciones y sus definiciones: vida_universitaria (clases, tareas, parciales, profesores), tecnologia_ia (IA, programación, apps, redes), relaciones_sociales (amistad, familia, pareja, interacción), cultura_digital (internet, memes, tendencias, chats), trabajo_productividad (cansancio, organización, estrés), humor_absurdo (lógica surrealista, exageración), o, solo en última instancia, otro. Para categoria_emocional, elige obligatoriamente: alegria, estres, frustracion, sarcasmo, sorpresa, tristeza, o neutral. Antes de asignar \"otro\" o \"neutral\", realiza un proceso de descarte lógico comparando la imagen con las definiciones proporcionadas. El resultado debe ser un único objeto JSON (sin Markdown, sin explicaciones, sin saludos) con las llaves: \"descripcion_visual\", \"texto_detectado\", \"categoria_tematica\", \"categoria_emocional\", \"tono\", \"rasgo_predominante\", \"instrucciones_dibujo\", \"contiene_persona_real\", \"requiere_consentimiento\" y \"estado\". Las \"instrucciones_dibujo\" deben ser pasos técnicos para una persona física. Si la imagen contiene a una persona, no la identifiques, mantén la descripción general y marca los campos de persona y consentimiento como \"Sí\" o \"No\". Si no puedes procesar la imagen, el estado será \"ERROR\", de lo contrario \"OK\".",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        80
+      ],
+      "id": "65aa2764-75de-41f4-bb0a-b9919da07b66",
+      "name": "Analyze an image1",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zSVQONaA7CURnwsM",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Switch3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch3": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript7": {
+      "main": [
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript8": {
+      "main": [
+        [
+          {
+            "node": "Send a text message6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "33cd4eb6-545b-485e-8982-0bfd58e33b1e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "53b438befad9060dd48461cafe38c69377c1aac08a5446c485c2ae90f5163acb"
+  },
+  "id": "ZdWsZQaE4QZHEXa0",
+  "tags": []
+}
